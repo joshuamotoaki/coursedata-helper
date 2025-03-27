@@ -1,10 +1,12 @@
 {
-  "name": "eval-helper",
+  "name": "princeton-eval-helper",
   "module": "index.ts",
   "type": "module",
   "private": true,
   "scripts": {
-    "main": "bun run src/index.ts"
+    "main": "bun run src/index.ts",
+    "lint": "prettier --check .",
+    "format": "prettier --write ."
   },
   "devDependencies": {
     "@types/bun": "latest",
