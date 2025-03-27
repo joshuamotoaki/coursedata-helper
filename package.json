@@ -1,0 +1,16 @@
+{
+  "name": "eval-helper",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "main": "bun run src/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "prettier": "^3.5.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
