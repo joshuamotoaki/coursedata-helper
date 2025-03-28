@@ -1,5 +1,6 @@
 import { EvaluationClient } from "./clients/evalClient";
 import { RegistrarClient } from "./clients/registrarClient";
+import { Analytics } from "./utils/analytics";
 import { ansiCodes as A } from "./utils/ansiCodes";
 import { TERMS } from "./utils/terms";
 import fs from "fs";
@@ -62,7 +63,7 @@ const cacheEval = (courseId: string, term: string, data: Object, force: boolean 
 };
 
 //----------------------------------------------------------------------
-const main = async () => {
+const cacheAllEvals = async () => {
     const CONCURRENCY = 2;
     const WAIT = 20;
 
@@ -112,4 +113,5 @@ const main = async () => {
     }
 };
 
-main();
+const a = new Analytics("./out");
+console.log(a.getAllRatingCategories());

@@ -14,7 +14,7 @@ type NonSuccessResponse = {
 
 type Response<T> = SuccessResponse<T> | NonSuccessResponse;
 
-type CourseEvalData = {
+export type CourseEvalData = {
     courseId: string;
     term: string;
     code: string;
