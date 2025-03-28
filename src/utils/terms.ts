@@ -1,6 +1,6 @@
 export const TERMS = [
-    "1262",
-    "1254",
+    // "1262", Not available
+    // "1254", Not available
     "1252",
     "1244",
     "1242",

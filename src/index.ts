@@ -2,6 +2,7 @@ import { EvaluationClient } from "./clients/evalClient";
 import { RegistrarClient } from "./clients/registrarClient";
 import { ansiCodes as A } from "./utils/ansiCodes";
 import { TERMS } from "./utils/terms";
+import fs from "fs";
 
 // Retrieve PHPSESSID from environment variables. If not set,
 // ask the user for it with detailed instructions.
@@ -35,13 +36,35 @@ const getPhpSessId = () => {
     } else return phpSessId;
 };
 
-const handleCourse = async (courseId: string, term: string) => {};
+const cacheEval = (courseId: string, term: string, data: Object, force: boolean = false) => {
+    const OUTPATH = "./out";
+    const filepath = `${OUTPATH}/${term}`;
+    const filename = `${courseId}.json`;
 
-const handleTerm = async (term: string) => {};
+    if (!fs.existsSync(OUTPATH)) fs.mkdirSync(OUTPATH);
+    if (!fs.existsSync(filepath)) fs.mkdirSync(filepath);
+
+    // Check if file exists
+    if (fs.existsSync(`${filepath}/${filename}`)) {
+        if (force) {
+            console.log(
+                `${A.red}${A.bright}WARNING: ${A.orange}File already exists for ${courseId} in term ${term}. Overwriting.${A.reset}`
+            );
+        } else {
+            console.log(
+                `${A.red}${A.bright}WARNING: ${A.orange}File already exists for ${courseId} in term ${term}. Skipping.${A.reset}`
+            );
+            return;
+        }
+    }
+
+    fs.writeFileSync(`${filepath}/${filename}`, JSON.stringify(data, null, 4));
+};
 
 //----------------------------------------------------------------------
 const main = async () => {
-    const CONCURRENCY = 5;
+    const CONCURRENCY = 1;
+    const WAIT = 20;
 
     const token = getPhpSessId();
     const evalClient = new EvaluationClient(token);
@@ -52,6 +75,36 @@ const main = async () => {
         console.log(
             `${A.yellow}${A.bright}Fetching evaluations for term ${term}. ${courseIds.length} courses found.${A.reset}`
         );
+
+        // Handle courses in batches of CONCURRENCY
+        for (let j = 0; j < courseIds.length; j += CONCURRENCY) {
+            const batch = courseIds.slice(j, j + CONCURRENCY);
+            const promises = batch.map((id) => evalClient.fetchEvalPage(id, term));
+            const responses = await Promise.all(promises);
+
+            for (let k = 0; k < responses.length; k++) {
+                const response = responses[k];
+                if (response.status === "SUCCESS") {
+                    const data = evalClient.parseEvalPage(response.data);
+                    cacheEval(batch[k], term, data);
+                } else if (
+                    response.status === "ERROR" &&
+                    response.message.includes("Session expired")
+                ) {
+                    const id = prompt(
+                        `${A.green}${A.bright}Please enter your PHPSESSID: ${A.reset}`
+                    );
+                    if (!id) throw new Error("PHPSESSID is required");
+                    evalClient.updateToken(id);
+                    j -= CONCURRENCY;
+                    break; // Retry the batch
+                } else {
+                    console.log(`${A.orange}No eval for ${batch[k]} in term ${term}.${A.reset}`);
+                }
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, WAIT));
+        }
     }
 
     // const sample = await client.fetchEvalPage("002051", "1244");
