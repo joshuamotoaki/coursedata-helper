@@ -63,7 +63,7 @@ const cacheEval = (courseId: string, term: string, data: Object, force: boolean 
 
 //----------------------------------------------------------------------
 const main = async () => {
-    const CONCURRENCY = 1;
+    const CONCURRENCY = 2;
     const WAIT = 20;
 
     const token = getPhpSessId();
@@ -105,12 +105,11 @@ const main = async () => {
 
             await new Promise((resolve) => setTimeout(resolve, WAIT));
         }
-    }
 
-    // const sample = await client.fetchEvalPage("002051", "1244");
-    // if (sample.status === "SUCCESS") {
-    //     console.log(client.parseEvalPage(sample.data));
-    // }
+        console.log(
+            `${A.green}${A.bright}Finished fetching evaluations for term ${term}.${A.reset}`
+        );
+    }
 };
 
 main();
