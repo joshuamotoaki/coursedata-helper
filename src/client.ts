@@ -14,6 +14,15 @@ type NonSuccessResponse = {
 
 type Response<T> = SuccessResponse<T> | NonSuccessResponse;
 
+type CourseEvalData = {
+    courseId: string;
+    term: string;
+    code: string;
+    instructors: string[];
+    ratings: Record<string, number>;
+    comments: string[];
+};
+
 //----------------------------------------------------------------------
 
 export class EvaluationClient {
@@ -86,6 +95,70 @@ export class EvaluationClient {
                 url: url,
                 contentType: "text/html"
             })
+        };
+    }
+
+    public parseEvalPage(dom: JSDOM): CourseEvalData {
+        const document = dom.window.document;
+
+        // Extract course ID and term code from the active term link
+        const activeTermLink = document.querySelector(".term-link.active");
+        const activeTermUrl = activeTermLink?.getAttribute("href") || "";
+
+        // Extract term code from URL parameters (terminfo)
+        const termCodeMatch = activeTermUrl.match(/terminfo=(\d+)/);
+        const term = termCodeMatch ? termCodeMatch[1] : "";
+
+        // Extract course ID from URL parameters
+        const courseIdMatch = activeTermUrl.match(/courseinfo=(\d+)/);
+        const courseId = courseIdMatch ? courseIdMatch[1] : "";
+
+        // Extract course code
+        const courseNameElement = document.querySelector(".course-name");
+        const fullCourseName = courseNameElement?.textContent?.trim() || "";
+        const courseCodeMatch = fullCourseName.match(/^([A-Z]+ \d+)\s+(.*)/);
+
+        const code = courseCodeMatch ? courseCodeMatch[1] : "";
+
+        // Extract instructors
+        const instructorElements = document.querySelectorAll(".instructor a");
+        const instructors = Array.from(instructorElements).map((el) => el.textContent || "");
+
+        // Extract ratings from the table
+        const ratings: Record<string, number> = {};
+
+        // Find the table with evaluation results
+        const tableRows = document.querySelectorAll("table tbody tr");
+
+        if (tableRows.length >= 2) {
+            const headerRow = tableRows[0];
+            const valueRow = tableRows[1];
+
+            const headers = headerRow.querySelectorAll("th");
+            const values = valueRow.querySelectorAll("td");
+
+            headers.forEach((header, index) => {
+                if (index < values.length) {
+                    const key = header.textContent?.trim() || "";
+                    const value = values[index].textContent?.trim() || "0";
+                    if (key && value) {
+                        ratings[key] = parseFloat(value);
+                    }
+                }
+            });
+        }
+
+        // Extract comments
+        const commentElements = document.querySelectorAll(".comments-section .comment");
+        const comments = Array.from(commentElements).map((el) => el.textContent?.trim() || "");
+
+        return {
+            courseId,
+            term,
+            code,
+            instructors,
+            ratings,
+            comments
         };
     }
 }

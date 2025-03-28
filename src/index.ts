@@ -38,7 +38,10 @@ const getPhpSessId = () => {
 const main = async () => {
     const token = getPhpSessId();
     const client = new EvaluationClient(token);
-    console.log(await client.fetchEvalPage("002051", "1244"));
+    const sample = await client.fetchEvalPage("002051", "1244");
+    if (sample.status === "SUCCESS") {
+        console.log(client.parseEvalPage(sample.data));
+    }
 };
 
 main();
