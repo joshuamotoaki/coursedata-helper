@@ -1,5 +1,7 @@
-import { EvaluationClient } from "./client";
+import { EvaluationClient } from "./clients/evalClient";
+import { RegistrarClient } from "./clients/registrarClient";
 import { ansiCodes as A } from "./utils/ansiCodes";
+import { TERMS } from "./utils/terms";
 
 // Retrieve PHPSESSID from environment variables. If not set,
 // ask the user for it with detailed instructions.
@@ -33,15 +35,29 @@ const getPhpSessId = () => {
     } else return phpSessId;
 };
 
-//----------------------------------------------------------------------
+const handleCourse = async (courseId: string, term: string) => {};
 
+const handleTerm = async (term: string) => {};
+
+//----------------------------------------------------------------------
 const main = async () => {
+    const CONCURRENCY = 5;
+
     const token = getPhpSessId();
-    const client = new EvaluationClient(token);
-    const sample = await client.fetchEvalPage("002051", "1244");
-    if (sample.status === "SUCCESS") {
-        console.log(client.parseEvalPage(sample.data));
+    const evalClient = new EvaluationClient(token);
+
+    for (let i = 0; i < TERMS.length; i++) {
+        const term = TERMS[i];
+        const courseIds = await RegistrarClient.fetchListingIds(term);
+        console.log(
+            `${A.yellow}${A.bright}Fetching evaluations for term ${term}. ${courseIds.length} courses found.${A.reset}`
+        );
     }
+
+    // const sample = await client.fetchEvalPage("002051", "1244");
+    // if (sample.status === "SUCCESS") {
+    //     console.log(client.parseEvalPage(sample.data));
+    // }
 };
 
 main();
