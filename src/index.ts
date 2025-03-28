@@ -27,16 +27,18 @@ const getPhpSessId = () => {
         console.log(`${A.yellow}6. Copy the value (not the name) of this cookie${A.reset}`);
         console.log(`${A.yellow}7. Paste it below when prompted${A.reset}\n`);
 
-        return prompt(`${A.green}${A.bright}Please enter your PHPSESSID: ${A.reset}`);
-    }
-    return phpSessId;
+        const id = prompt(`${A.green}${A.bright}Please enter your PHPSESSID: ${A.reset}`);
+        if (!id) throw new Error("PHPSESSID is required");
+        return id;
+    } else return phpSessId;
 };
 
 //----------------------------------------------------------------------
 
 const main = async () => {
     const token = getPhpSessId();
-    console.log(token);
+    const client = new EvaluationClient(token);
+    console.log(client);
 };
 
 main();
