@@ -33,7 +33,7 @@ export class Analytics {
     }
 
     /**
-     * Get the list of categories for which ratings are given
+     * Get the list of7u categories for which ratings are given
      * @returns A list of categories for which ratings are given
      * and their counts across all evaluations
      */
