@@ -39,7 +39,7 @@ const getPhpSessId = () => {
 const cacheEval = (courseId: string, term: string, data: Object, force: boolean = false) => {
     const OUTPATH = "./out/evals";
     const filepath = `${OUTPATH}/${term}`;
-    const filename = `${courseId}.json`;
+    const filename = `${term}-${courseId}.json`;
 
     if (!fs.existsSync(filepath)) createFoldersDeep(filepath);
 
