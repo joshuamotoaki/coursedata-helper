@@ -1,8 +1,8 @@
 import { EvaluationClient } from "./clients/evalClient";
 import { RegistrarClient } from "./clients/registrarClient";
+import { TERMS, createFoldersDeep } from "./utils";
 import { Analytics } from "./utils/analytics";
 import { AnsiColors as A } from "./utils/ansiCodes";
-import { TERMS } from "./utils/terms";
 import fs from "fs";
 
 // Retrieve PHPSESSID from environment variables. If not set,
@@ -41,8 +41,7 @@ const cacheEval = (courseId: string, term: string, data: Object, force: boolean 
     const filepath = `${OUTPATH}/${term}`;
     const filename = `${courseId}.json`;
 
-    if (!fs.existsSync(OUTPATH)) fs.mkdirSync(OUTPATH);
-    if (!fs.existsSync(filepath)) fs.mkdirSync(filepath);
+    if (!fs.existsSync(filepath)) createFoldersDeep(filepath);
 
     // Check if file exists
     if (fs.existsSync(`${filepath}/${filename}`)) {
@@ -62,15 +61,23 @@ const cacheEval = (courseId: string, term: string, data: Object, force: boolean 
 };
 
 //----------------------------------------------------------------------
-const cacheAllEvals = async () => {
+
+/**
+ * Caches evaluations for a list of terms into JSON files.
+ * @param terms An array of term codes to fetch evaluations for.
+ */
+const cacheAllEvals = async (terms: string[] = []) => {
+    // These settings seem to be fast enough without being too aggressive
+    // Bump up at your own risk
     const CONCURRENCY = 2;
     const WAIT = 20;
 
     const token = getPhpSessId();
     const evalClient = new EvaluationClient(token);
+    if (terms.length === 0) terms = TERMS; // Use all terms if none are provided
 
-    for (let i = 0; i < TERMS.length; i++) {
-        const term = TERMS[i];
+    for (let i = 0; i < terms.length; i++) {
+        const term = terms[i];
         const courseIds = await RegistrarClient.fetchListingIds(term);
         A.print(
             `Fetching evaluations for term ${term}. ${courseIds.length} courses found.`,
@@ -94,11 +101,12 @@ const cacheAllEvals = async () => {
                     response.message.includes("Session expired")
                 ) {
                     const id = prompt(
-                        `${A.green}${A.bright}Please enter your PHPSESSID: ${A.reset}`
+                        `${A.green}${A.bright}Token expired. Please enter your PHPSESSID (${EvaluationClient.BASE_URL}): ${A.reset}`
                     );
                     if (!id) throw new Error("PHPSESSID is required");
                     evalClient.updateToken(id);
-                    j -= CONCURRENCY;
+                    j = Math.max(0, j - CONCURRENCY);
+                    A.print("Jumping back to index " + j, A.red, A.bright);
                     break; // Retry the batch
                 } else {
                     A.print(`No eval for ${batch[k]} in term ${term}.`, A.orange);
@@ -111,5 +119,4 @@ const cacheAllEvals = async () => {
     }
 };
 
-const a = new Analytics("./out");
-console.log(a.getAllRatingCategories());
+cacheAllEvals();

@@ -1,3 +1,19 @@
+import fs from "fs";
+
+export const createFoldersDeep = (path: string) => {
+    const parts = path.split("/");
+    let currentPath = path.startsWith(".") ? "." : "";
+
+    for (const part of parts) {
+        if (part) {
+            currentPath += `/${part}`;
+            if (!fs.existsSync(currentPath)) {
+                fs.mkdirSync(currentPath);
+            }
+        }
+    }
+};
+
 /**
  * A list of term codes for Princeton University.
  * Codes ending in 2 are fall terms, and codes ending in 4 are spring terms.

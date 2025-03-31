@@ -116,7 +116,7 @@ export class EvaluationClient {
         // Extract course code
         const courseNameElement = document.querySelector(".course-name");
         const fullCourseName = courseNameElement?.textContent?.trim() || "";
-        const courseCodeMatch = fullCourseName.match(/^([A-Z]+ \d+)\s+(.*)/);
+        const courseCodeMatch = fullCourseName.match(/^([A-Z]+ \d+[A-Z]?)\s+(.*)/);
 
         const code = courseCodeMatch ? courseCodeMatch[1] : "";
 
