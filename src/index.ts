@@ -1,7 +1,7 @@
 import { EvaluationClient } from "./clients/evalClient";
 import { RegistrarClient } from "./clients/registrarClient";
 import { Analytics } from "./utils/analytics";
-import { ansiCodes as A } from "./utils/ansiCodes";
+import { AnsiColors as A } from "./utils/ansiCodes";
 import { TERMS } from "./utils/terms";
 import fs from "fs";
 
@@ -10,15 +10,14 @@ import fs from "fs";
 const getPhpSessId = () => {
     const phpSessId = process.env.PHPSESSID;
     if (!phpSessId) {
-        console.log(`${A.red}${A.bright}PHPSESSID not found in environment variables.${A.reset}`);
-        console.log(`\n${A.green}${A.bright}Follow these steps to find your PHPSESSID:${A.reset}`);
+        A.print("PHPSESSID not found in environment variables.", A.red, A.bright);
+        A.print("\nFollow these steps to find your PHPSESSID:", A.green, A.bright);
         console.log(`${A.yellow}1. Visit ${A.blue}${EvaluationClient.BASE_URL}${A.reset}`);
-        console.log(
-            `${A.yellow}2. Open Chrome DevTools by right-clicking anywhere on the page and selecting 'Inspect'${A.reset}`
+        A.print(
+            "2. Open Chrome DevTools by right-clicking anywhere on the page and selecting 'Inspect'",
+            A.yellow
         );
-        console.log(
-            `   ${A.magenta}(or press Ctrl+Shift+I on Windows/Linux or Cmd+Option+I on Mac)${A.reset}`
-        );
+        A.print("(or press Ctrl+Shift+I on Windows/Linux or Cmd+Option+I on Mac)", A.magenta);
         console.log(
             `${A.yellow}3. In DevTools, click on the '${A.green}Application${A.yellow}' tab${A.reset}`
         );
@@ -28,10 +27,10 @@ const getPhpSessId = () => {
         console.log(
             `${A.yellow}5. Find the cookie named '${A.bright}PHPSESSID${A.reset}${A.yellow}' in the list${A.reset}`
         );
-        console.log(`${A.yellow}6. Copy the value (not the name) of this cookie${A.reset}`);
-        console.log(`${A.yellow}7. Paste it below when prompted${A.reset}\n`);
+        A.print("6. Copy the value (not the name) of this cookie", A.yellow);
+        A.print("7. Paste it below when prompted", A.yellow);
 
-        const id = prompt(`${A.green}${A.bright}Please enter your PHPSESSID: ${A.reset}`);
+        const id = prompt(A.formatText("Please enter your PHPSESSID: ", A.green, A.bright));
         if (!id) throw new Error("PHPSESSID is required");
         return id;
     } else return phpSessId;
@@ -73,8 +72,10 @@ const cacheAllEvals = async () => {
     for (let i = 0; i < TERMS.length; i++) {
         const term = TERMS[i];
         const courseIds = await RegistrarClient.fetchListingIds(term);
-        console.log(
-            `${A.yellow}${A.bright}Fetching evaluations for term ${term}. ${courseIds.length} courses found.${A.reset}`
+        A.print(
+            `Fetching evaluations for term ${term}. ${courseIds.length} courses found.`,
+            A.yellow,
+            A.bright
         );
 
         // Handle courses in batches of CONCURRENCY
@@ -100,16 +101,13 @@ const cacheAllEvals = async () => {
                     j -= CONCURRENCY;
                     break; // Retry the batch
                 } else {
-                    console.log(`${A.orange}No eval for ${batch[k]} in term ${term}.${A.reset}`);
+                    A.print(`No eval for ${batch[k]} in term ${term}.`, A.orange);
                 }
             }
 
             await new Promise((resolve) => setTimeout(resolve, WAIT));
         }
-
-        console.log(
-            `${A.green}${A.bright}Finished fetching evaluations for term ${term}.${A.reset}`
-        );
+        A.print(`Finished fetch evaluations for term ${term}.`, A.green, A.bright);
     }
 };
 
