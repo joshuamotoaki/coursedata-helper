@@ -1,12 +1,16 @@
+/**
+ * A small client for utilizing the registrar's public course listings API.
+ * This API is rate-limited and will (at least temporarily) IP ban you if you spam it.
+ * Unfortunately, it is the most convenient way to get a list of course IDs for a given term.
+ * I would recommend using the OIT API for most other purposes.
+ * I.e. future maintainers, only extend this class if you absolutely need to.
+ */
 export class RegistrarClient {
-    // API endpoint for the public course listings API
-    private static readonly REG_PUBLIC_URL =
+    // API endpoint for the registrar's public course listings API
+    private static readonly REG_API_URL =
         "https://api.princeton.edu/registrar/course-offerings/classes/";
 
-    // API endpoint for the registrar student-app API
-    private static readonly REG_API_URL = "https://api.princeton.edu/student-app/1.0.3/";
-
-    // Gets the API token for use in the public course listings API
+    // Gets the API token for use in the registrar's API
     private static getToken = async () => {
         const response = await fetch("https://registrar.princeton.edu/course-offerings");
         const text = await response.text();
@@ -15,20 +19,25 @@ export class RegistrarClient {
 
     /**
      * Fetches the course listings for a given term.
-     * Note: Uses the public API, which should not be spammed.
+     * Note: This API rate-limits and IP bans and should not be spammed.
      * @param term The 4-digit term code to fetch listings for.
      * @returns An array of course IDs for the given term.
      */
     public static async fetchListingIds(term: string): Promise<string[]> {
         const token = await this.getToken();
-        const rawCourseList = await fetch(`${this.REG_PUBLIC_URL}${term}`, {
+        const rawCourseList = await fetch(`${this.REG_API_URL}${term}`, {
             method: "GET",
             headers: {
                 Authorization: token
             }
         });
-        const courseList: any = await rawCourseList.json();
+        if (!rawCourseList.ok) throw new Error("Failed to fetch course list");
 
+        // Yes, we are not doing any type checking here and just assuming
+        // the response is valid and in the format we expect. If it breaks,
+        // then something has changed. Otherwise, we only need the course_ids
+        // and the rest of the data is irrelevant.
+        const courseList: any = await rawCourseList.json();
         const valid =
             courseList &&
             courseList.classes &&
