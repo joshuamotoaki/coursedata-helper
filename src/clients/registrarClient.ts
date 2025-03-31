@@ -17,13 +17,8 @@ export class RegistrarClient {
         return "Bearer " + text.split('apiToken":"')[1].split('"')[0];
     };
 
-    /**
-     * Fetches the course listings for a given term.
-     * Note: This API rate-limits and IP bans and should not be spammed.
-     * @param term The 4-digit term code to fetch listings for.
-     * @returns An array of course IDs for the given term.
-     */
-    public static async fetchListingIds(term: string): Promise<string[]> {
+    // Fetches the course listings for a given term.
+    private static async fetchListings(term: string): Promise<any[]> {
         const token = await this.getToken();
         const rawCourseList = await fetch(`${this.REG_API_URL}${term}`, {
             method: "GET",
@@ -45,11 +40,33 @@ export class RegistrarClient {
             Array.isArray(courseList.classes.class);
         if (!valid) throw new Error("Invalid course list response format");
 
-        const regListings = courseList.classes.class as any[];
+        return courseList.classes.class as any[];
+    }
+
+    /**
+     * Fetches the course listing IDs for a given term.
+     * Note: This API rate-limits and IP bans and should not be spammed.
+     * @param term The 4-digit term code to fetch listings for.
+     * @returns An array of course IDs for the given term.
+     */
+    public static async fetchListingIds(term: string): Promise<string[]> {
+        const regListings = await this.fetchListings(term);
 
         // Remove duplicates by course_id and sort by course_id
         return [...new Set<string>(regListings.map((x: any) => x.course_id))].sort((a, b) =>
             a.localeCompare(b)
         );
+    }
+
+    /**
+     * Fetches the 3-letter department codes for a given term.
+     * @param term The 4-digit term code to fetch listings for.
+     * @returns An array of department codes for the given term.
+     */
+    public static async fetchDeptCodes(term: string): Promise<string[]> {
+        const regListings = await this.fetchListings(term);
+
+        // Remove duplicates by department and sort by department code
+        return [...new Set<string>(regListings.map((x: any) => x.subject))].sort();
     }
 }
