@@ -1,3 +1,5 @@
+import type { OitCourseDetails, OitDeptCourse, OitSeat, Status } from "../utils/oitTypes";
+
 /**
  * A client for utilizing the OIT's student-app API. This is the main
  * data source for course information (with the exception of course IDs which
@@ -20,10 +22,119 @@ export class OitClient {
     private readonly API_KEY: string;
 
     // API endpoint for the OIT's student-app API.
-    private static readonly OIT_API_URL = "https://api.princeton.edu/student-app/1.0.3/";
+    private readonly OIT_API_URL = "https://api.princeton.edu/student-app/1.0.3/";
 
     constructor(apiKey: string) {
         if (!apiKey) throw new Error("API key is required");
         this.API_KEY = apiKey;
     }
+
+    /**
+     *
+     * @param dept
+     * @param term
+     * @returns
+     */
+    public fetchDeptCourses = async (dept: string, term: string): Promise<OitDeptCourse[]> => {
+        const rawDeptData = await fetch(
+            `${this.OIT_API_URL}courses/courses?term=${term}&subject=${dept}&fmt=json`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization: this.API_KEY
+                }
+            }
+        );
+
+        const deptData: any = await rawDeptData.json();
+        if (!deptData.term[0].subjects) {
+            console.error("No courses found for department " + dept);
+            return [];
+        }
+
+        // Find correct department
+        const correctIndex = deptData.term[0].subjects.findIndex((x: any) => x.code === dept);
+
+        if (correctIndex === -1) {
+            console.error("No courses found for department " + dept);
+            return [];
+        }
+
+        return deptData.term[0].subjects[correctIndex].courses as OitDeptCourse[];
+    };
+
+    /**
+     *
+     * @param listingId
+     * @param term
+     * @returns
+     */
+    public fetchCourseDetails = async (
+        listingId: string,
+        term: string
+    ): Promise<OitCourseDetails> => {
+        const rawCourseDetails = await fetch(
+            `${this.OIT_API_URL}courses/details?term=${term}&course_id=${listingId}&fmt=json`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization: this.API_KEY
+                }
+            }
+        );
+        const courseDetails: any = await rawCourseDetails.json();
+
+        const valid =
+            courseDetails &&
+            courseDetails.course_details &&
+            courseDetails.course_details.course_detail;
+        if (!valid) throw new Error("Invalid course details response format");
+
+        return courseDetails.course_details.course_detail as OitCourseDetails;
+    };
+
+    /**
+     *
+     * @param courseIds
+     * @param term
+     * @returns
+     */
+    public fetchSeats = async (courseIds: string[], term: string): Promise<OitSeat[]> => {
+        const rawSeatData = await fetch(
+            `${this.OIT_API_URL}courses/seats?term=${term}&course_ids=${courseIds.join(",")}&fmt=json`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization: this.API_KEY
+                }
+            }
+        );
+        const seatData: any = await rawSeatData.json();
+
+        const valid = seatData.course && Array.isArray(seatData.course);
+        if (!valid) throw new Error("Invalid seat data response format");
+
+        const formattedSeatData = seatData.course.map((x: any) => {
+            return {
+                listingId: x.course_id,
+                sections: x.classes.map((y: any) => {
+                    return {
+                        num: y.class_number,
+                        tot: parseInt(y.enrollment),
+                        cap: parseInt(y.capacity),
+                        status: y.pu_calc_status.toLowerCase() as Status
+                    };
+                })
+            };
+        }) as OitSeat[];
+
+        // Ensure section status is valid
+        for (const seat of formattedSeatData) {
+            if (seat.sections.some((x) => !["open", "closed", "canceled"].includes(x.status))) {
+                console.error("Unknown section status for " + seat.listingId);
+            }
+        }
+
+        return formattedSeatData;
+    };
 }

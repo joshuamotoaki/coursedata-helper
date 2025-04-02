@@ -2,7 +2,7 @@ export type Status = "open" | "closed" | "canceled";
 
 export type StringBoolean = "Y" | "N";
 
-export type RegListing = {
+export type OitListing = {
     class_number: string;
     crosslistings: string;
     subject: string;
@@ -31,7 +31,7 @@ export type RegListing = {
     class_status: string;
 };
 
-export type RegDeptCourse = {
+export type OitDeptCourse = {
     guid: string;
     course_id: string;
     catalog_number: string;
@@ -80,7 +80,7 @@ export type RegDeptCourse = {
     }[];
 };
 
-export type RegCourseDetails = {
+export type OitCourseDetails = {
     subject: string;
     catnum: string;
     crosslistings: string;
@@ -160,7 +160,7 @@ export type RegCourseDetails = {
     grading_term_papers: string;
 };
 
-export type RegSeat = {
+export type OitSeat = {
     listingId: string;
     sections: {
         num: string;

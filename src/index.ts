@@ -1,4 +1,5 @@
 import { EvaluationClient } from "./clients/evalClient";
+import { OitClient } from "./clients/oitClient";
 import { RegistrarClient } from "./clients/registrarClient";
 import { TERMS, createFoldersDeep } from "./utils";
 import { Analytics } from "./utils/analytics";
@@ -143,4 +144,5 @@ const printDepartments = async (term: string = "") => {
     }
 };
 
-printDepartments("1262");
+const oit = new OitClient(process.env.OIT_API_KEY!);
+console.log((await oit.fetchSeats(["017400"], "1262"))[0].sections);
