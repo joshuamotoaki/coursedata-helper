@@ -25,8 +25,8 @@ export const createFoldersDeep = (path: string) => {
  * for a new term when you go to update everything.
  */
 export const TERMS = [
-    // "1262", Not available
-    // "1254", Not available
+    "1262",
+    "1254",
     "1252",
     "1244",
     "1242",
@@ -44,3 +44,6 @@ export const TERMS = [
     "1182",
     "1174"
 ];
+
+// Terms with evaluations aval
+export const EVAL_TERMS = TERMS.filter((term) => term !== "1262" && term !== "1254");
