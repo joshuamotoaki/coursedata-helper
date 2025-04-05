@@ -1,5 +1,13 @@
-import fs from "fs";
+// utils/index.ts
+// Author: Joshua Motoaki Lau '26
 
+import fs from "fs";
+import { AnsiColors as A } from "./ansiCodes";
+
+/**
+ * Creates folders recursively for a given path.
+ * @param path The path to create folders for
+ */
 export const createFoldersDeep = (path: string) => {
     const parts = path.split("/");
     let currentPath = path.startsWith(".") ? "." : "";
@@ -12,6 +20,34 @@ export const createFoldersDeep = (path: string) => {
             }
         }
     }
+};
+
+/**
+ * Caches data into a JSON file.
+ * If the file already exists, it will be overwritten if `force` is true.
+ * Otherwise, it will skip writing the file.
+ * @param path Path to the file to cache
+ * @param data Data to cache
+ * @param force Whether to overwrite the file if it already exists
+ */
+export const cacheData = (path: string, data: Object, force: boolean = false) => {
+    const folderpath = path.split("/").slice(0, -1).join("/");
+    if (!fs.existsSync(folderpath)) createFoldersDeep(folderpath);
+
+    if (fs.existsSync(path)) {
+        if (force) {
+            console.log(
+                `${A.red}${A.bright}WARNING: ${A.orange}File already exists. Overwriting.${A.reset}`
+            );
+        } else {
+            console.log(
+                `${A.red}${A.bright}WARNING: ${A.orange}File already exists. Skipping.${A.reset}`
+            );
+            return;
+        }
+    }
+
+    fs.writeFileSync(path, JSON.stringify(data, null, 4));
 };
 
 /**

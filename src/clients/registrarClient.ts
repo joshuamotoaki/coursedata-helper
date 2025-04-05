@@ -1,3 +1,6 @@
+// registrarClient.ts
+// Author: Joshua Motoaki Lau '26
+
 /**
  * A small client for utilizing the registrar's public course listings API.
  * This API is rate-limited and will (at least temporarily) IP ban you if you spam it.

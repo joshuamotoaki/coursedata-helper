@@ -1,3 +1,6 @@
+// oitTypes.ts
+// Author: Joshua Motoaki Lau '26
+
 export type Status = "open" | "closed" | "canceled";
 
 export type StringBoolean = "Y" | "N";

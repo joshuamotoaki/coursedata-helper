@@ -1,3 +1,6 @@
+// analytics.ts
+// Author: Joshua Motoaki Lau '26
+
 import fs from "fs";
 import type { CourseEvalData } from "../clients/evalClient";
 

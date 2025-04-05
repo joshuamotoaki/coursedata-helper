@@ -1,3 +1,6 @@
+// claudeClient.ts
+// Author: Joshua Motoaki Lau '26
+
 import { Anthropic } from "@anthropic-ai/sdk";
 
 /**

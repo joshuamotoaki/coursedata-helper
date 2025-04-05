@@ -1,3 +1,6 @@
+// ansiCodes.ts
+// Author: Joshua Motoaki Lau '26
+
 /**
  * ANSI color codes for terminal output. For aesthetic use only. 🌈✨🎨
  */

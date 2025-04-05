@@ -1,5 +1,6 @@
 // oitClient.ts
 // Author: Joshua Motoaki Lau
+
 import type { OitCourseDetails, OitDeptCourse, OitSeat, Status } from "../utils/oitTypes";
 
 /**

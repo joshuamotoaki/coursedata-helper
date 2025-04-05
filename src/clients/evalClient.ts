@@ -1,3 +1,6 @@
+// evalClient.ts
+// Author: Joshua Motoaki Lau '26
+
 import { JSDOM } from "jsdom";
 
 type StatusType = "REDIRECT" | "ERROR" | "SUCCESS";
