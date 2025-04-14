@@ -1,6 +1,7 @@
 // oitClient.ts
 // Author: Joshua Motoaki Lau
 
+import { createTimeoutPromise } from "../utils";
 import type { OitCourseDetails, OitDeptCourse, OitSeat, Status } from "../utils/oitTypes";
 
 /**
@@ -27,6 +28,8 @@ import type { OitCourseDetails, OitDeptCourse, OitSeat, Status } from "../utils/
  * If neither of the above apply, then good luck, have fun :)
  */
 export class OitClient {
+    private readonly TIMEOUT = 10000; // 10 seconds
+
     // API key for the OIT's student-app API. This is required for authentication.
     private readonly API_KEY: string;
 
@@ -38,6 +41,10 @@ export class OitClient {
         this.API_KEY = apiKey;
     }
 
+    private reqWithTimeout = async (fetcher: () => Promise<Response>) => {
+        return await Promise.race([fetcher(), createTimeoutPromise(this.TIMEOUT)]);
+    };
+
     /**
      * Fetch the list of courses with main listing being in a given department
      * @param dept 3-letter department code (e.g. "COS")
@@ -45,31 +52,38 @@ export class OitClient {
      * @returns A list of courses in the given department
      */
     public fetchDeptCourses = async (dept: string, term: string): Promise<OitDeptCourse[]> => {
-        const rawDeptData = await fetch(
-            `${this.OIT_API_URL}courses/courses?term=${term}&subject=${dept}&fmt=json`,
-            {
-                method: "GET",
-                headers: {
-                    Authorization: this.API_KEY
-                }
+        try {
+            const rawDeptData = await this.reqWithTimeout(() =>
+                fetch(`${this.OIT_API_URL}courses/courses?term=${term}&subject=${dept}&fmt=json`, {
+                    method: "GET",
+                    headers: {
+                        Authorization: this.API_KEY
+                    }
+                })
+            );
+
+            const deptData: any = await rawDeptData.json();
+            if (!deptData.term[0].subjects) {
+                console.error("No courses found for department " + dept);
+                return [];
             }
-        );
 
-        const deptData: any = await rawDeptData.json();
-        if (!deptData.term[0].subjects) {
-            console.error("No courses found for department " + dept);
-            return [];
+            // Find correct department
+            const correctIndex = deptData.term[0].subjects.findIndex((x: any) => x.code === dept);
+
+            if (correctIndex === -1) {
+                console.error("No courses found for department " + dept);
+                return [];
+            }
+
+            return deptData.term[0].subjects[correctIndex].courses as OitDeptCourse[];
+        } catch (error: any) {
+            console.error(
+                `Error with fetchDeptCourses for dept ${dept} and term ${term}:`,
+                error.message
+            );
+            throw new Error(`Failed to fetch department courses: ${error.message}`);
         }
-
-        // Find correct department
-        const correctIndex = deptData.term[0].subjects.findIndex((x: any) => x.code === dept);
-
-        if (correctIndex === -1) {
-            console.error("No courses found for department " + dept);
-            return [];
-        }
-
-        return deptData.term[0].subjects[correctIndex].courses as OitDeptCourse[];
     };
 
     /**
@@ -82,24 +96,35 @@ export class OitClient {
         listingId: string,
         term: string
     ): Promise<OitCourseDetails> => {
-        const rawCourseDetails = await fetch(
-            `${this.OIT_API_URL}courses/details?term=${term}&course_id=${listingId}&fmt=json`,
-            {
-                method: "GET",
-                headers: {
-                    Authorization: this.API_KEY
-                }
-            }
-        );
-        const courseDetails: any = await rawCourseDetails.json();
+        try {
+            const rawCourseDetails = await this.reqWithTimeout(() =>
+                fetch(
+                    `${this.OIT_API_URL}courses/details?term=${term}&course_id=${listingId}&fmt=json`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization: this.API_KEY
+                        }
+                    }
+                )
+            );
 
-        const valid =
-            courseDetails &&
-            courseDetails.course_details &&
-            courseDetails.course_details.course_detail;
-        if (!valid) throw new Error("Invalid course details response format");
+            const courseDetails: any = await rawCourseDetails.json();
 
-        return courseDetails.course_details.course_detail as OitCourseDetails;
+            const valid =
+                courseDetails &&
+                courseDetails.course_details &&
+                courseDetails.course_details.course_detail;
+            if (!valid) throw new Error("Invalid course details response format");
+
+            return courseDetails.course_details.course_detail as OitCourseDetails;
+        } catch (error: any) {
+            console.error(
+                `Error with fetchCourseDetails for listingId ${listingId} and term ${term}:`,
+                error.message
+            );
+            throw new Error(`Failed to fetch course details: ${error.message}`);
+        }
     };
 
     /**
@@ -111,41 +136,52 @@ export class OitClient {
      * @returns A list of seat information for the given course IDs
      */
     public fetchSeats = async (courseIds: string[], term: string): Promise<OitSeat[]> => {
-        const rawSeatData = await fetch(
-            `${this.OIT_API_URL}courses/seats?term=${term}&course_ids=${courseIds.join(",")}&fmt=json`,
-            {
-                method: "GET",
-                headers: {
-                    Authorization: this.API_KEY
+        try {
+            const rawSeatData = await this.reqWithTimeout(() =>
+                fetch(
+                    `${this.OIT_API_URL}courses/seats?term=${term}&course_ids=${courseIds.join(",")}&fmt=json`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization: this.API_KEY
+                        }
+                    }
+                )
+            );
+
+            const seatData: any = await rawSeatData.json();
+
+            const valid = seatData.course && Array.isArray(seatData.course);
+            if (!valid) throw new Error("Invalid seat data response format");
+
+            const formattedSeatData = seatData.course.map((x: any) => {
+                return {
+                    listingId: x.course_id,
+                    sections: x.classes.map((y: any) => {
+                        return {
+                            num: y.class_number,
+                            tot: parseInt(y.enrollment),
+                            cap: parseInt(y.capacity),
+                            status: y.pu_calc_status.toLowerCase() as Status
+                        };
+                    })
+                };
+            }) as OitSeat[];
+
+            // Ensure section status is valid
+            for (const seat of formattedSeatData) {
+                if (seat.sections.some((x) => !["open", "closed", "canceled"].includes(x.status))) {
+                    console.error("Unknown section status for " + seat.listingId);
                 }
             }
-        );
-        const seatData: any = await rawSeatData.json();
 
-        const valid = seatData.course && Array.isArray(seatData.course);
-        if (!valid) throw new Error("Invalid seat data response format");
-
-        const formattedSeatData = seatData.course.map((x: any) => {
-            return {
-                listingId: x.course_id,
-                sections: x.classes.map((y: any) => {
-                    return {
-                        num: y.class_number,
-                        tot: parseInt(y.enrollment),
-                        cap: parseInt(y.capacity),
-                        status: y.pu_calc_status.toLowerCase() as Status
-                    };
-                })
-            };
-        }) as OitSeat[];
-
-        // Ensure section status is valid
-        for (const seat of formattedSeatData) {
-            if (seat.sections.some((x) => !["open", "closed", "canceled"].includes(x.status))) {
-                console.error("Unknown section status for " + seat.listingId);
-            }
+            return formattedSeatData;
+        } catch (error: any) {
+            console.error(
+                `Error with fetchSeats for courseIds ${courseIds} and term ${term}:`,
+                error.message
+            );
+            throw new Error(`Failed to fetch seat data: ${error.message}`);
         }
-
-        return formattedSeatData;
     };
 }

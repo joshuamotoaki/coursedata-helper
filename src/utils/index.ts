@@ -5,6 +5,20 @@ import fs from "fs";
 import { AnsiColors as A } from "./ansiCodes";
 
 /**
+ * Creates a timeout promise that rejects after the given timeout.
+ * This is useful for handling slow requests or operations that may hang.
+ * @param timeout Timeout in milliseconds
+ * @returns A promise that rejects after the given timeout
+ */
+export const createTimeoutPromise = (timeout: number): Promise<Response> => {
+    return new Promise<Response>((_, reject) => {
+        setTimeout(() => {
+            reject(new Error(`Request timed out after ${timeout / 1000} seconds`));
+        }, timeout);
+    });
+};
+
+/**
  * Creates folders recursively for a given path.
  * @param path The path to create folders for
  */
