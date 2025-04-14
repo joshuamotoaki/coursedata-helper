@@ -10,7 +10,7 @@ const main = async () => {
     const args = process.argv.slice(2);
     if (args.length === 0) {
         A.print("No arguments provided. Exiting.", A.red, A.bright);
-        A.print("Usage: node index.js <command> [term]", A.yellow, A.bright);
+        A.print("Usage: bun run main <command> [term]", A.yellow, A.bright);
         A.print("Commands:", A.yellow, A.bright);
         A.print("  cache-evals <term>", A.yellow);
         A.print("  cache-dept-courses <term>", A.yellow);
