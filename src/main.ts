@@ -4,39 +4,66 @@
 import { cacheCourses } from "./cacheCourses";
 import { cacheEvals } from "./cacheEvals";
 import { printDepartments } from "./printDepts";
-import { AnsiColors as A } from "./utils/ansiCodes";
-
-const printUsage = () => {
-    A.print("Usage: bun run main <command> [term]", A.yellow, A.bright);
-    A.print("Commands:", A.yellow, A.bright);
-    A.print("  cache-evals <term>", A.yellow);
-    A.print("  cache-courses <term>", A.yellow);
-    A.print("  print-depts <term>", A.yellow);
-};
+import yargs from "yargs";
 
 const main = async () => {
-    const args = process.argv.slice(2);
-    if (args.includes("--help") || args.includes("-h") || args.length === 0) {
-        printUsage();
-        return;
-    }
-
-    const command = args[0];
-    const term = args[1];
-
-    switch (command) {
-        case "cache-evals":
-            await cacheEvals(term ? [term] : []);
-            break;
-        case "cache-courses":
-            await cacheCourses(term ? [term] : []);
-            break;
-        case "print-depts":
-            await printDepartments(term);
-            break;
-        default:
-            A.print(`Unknown command: ${command}`, A.red, A.bright);
-            break;
-    }
+    yargs(process.argv.slice(2))
+        .scriptName("bun run main")
+        .usage("$0 <cmd> [args]")
+        .command(
+            "cache-evals",
+            "Cache course evaluations",
+            (yargs) => {
+                return yargs.option("terms", {
+                    alias: "t",
+                    type: "array",
+                    description: "List of terms to cache evaluations for",
+                    default: []
+                });
+            },
+            async (argv) => {
+                await cacheEvals(argv.terms as string[]);
+            }
+        )
+        .command(
+            "cache-courses",
+            "Cache course data",
+            (yargs) => {
+                return yargs
+                    .option("terms", {
+                        alias: "t",
+                        type: "array",
+                        description: "List of terms to cache course data for",
+                        default: []
+                    })
+                    .option("depts", {
+                        alias: "d",
+                        type: "array",
+                        description: "List of departments to cache course data for",
+                        default: []
+                    });
+            },
+            async (argv) => {
+                await cacheCourses(argv.terms as string[], argv.depts as string[]);
+            }
+        )
+        .command(
+            "print-depts",
+            "Print department codes",
+            (yargs) => {
+                return yargs.option("term", {
+                    alias: "t",
+                    type: "string",
+                    description: "Term to print department codes for"
+                });
+            },
+            async (argv) => {
+                await printDepartments(argv.term as string);
+            }
+        )
+        .demandCommand(1, "You need to specify a command")
+        .help()
+        .alias("help", "h").argv;
 };
+
 main();

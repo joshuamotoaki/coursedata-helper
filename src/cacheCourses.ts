@@ -25,7 +25,7 @@ const cacheCourseDetail = (
  *
  * @param terms An array of term codes to fetch courses for.
  */
-export const cacheCourses = async (terms: string[] = []) => {
+export const cacheCourses = async (terms: string[] = [], depts: string[] = []) => {
     // Time to wait between terms (important for all terms case)
     const WAIT = 5000;
 
@@ -37,7 +37,14 @@ export const cacheCourses = async (terms: string[] = []) => {
 
     for (let i = 0; i < terms.length; i++) {
         const term = terms[i];
-        const depts = await RegistrarClient.fetchDeptCodes(term);
+
+        const allDepts = await RegistrarClient.fetchDeptCodes(term);
+        if (depts.length === 0) depts = allDepts;
+        else if (depts.filter((x) => !allDepts.includes(x)).length > 0)
+            throw new Error(
+                `Invalid department codes provided. Valid codes are: ${allDepts.join(", ")}`
+            );
+
         A.print(
             `Fetching courses for term ${term}. ${depts.length} departments found.`,
             A.yellow,
