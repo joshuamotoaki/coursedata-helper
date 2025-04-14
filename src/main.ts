@@ -6,15 +6,18 @@ import { cacheEvals } from "./cacheEvals";
 import { printDepartments } from "./printDepts";
 import { AnsiColors as A } from "./utils/ansiCodes";
 
+const printUsage = () => {
+    A.print("Usage: bun run main <command> [term]", A.yellow, A.bright);
+    A.print("Commands:", A.yellow, A.bright);
+    A.print("  cache-evals <term>", A.yellow);
+    A.print("  cache-courses <term>", A.yellow);
+    A.print("  print-depts <term>", A.yellow);
+};
+
 const main = async () => {
     const args = process.argv.slice(2);
-    if (args.length === 0) {
-        A.print("No arguments provided. Exiting.", A.red, A.bright);
-        A.print("Usage: bun run main <command> [term]", A.yellow, A.bright);
-        A.print("Commands:", A.yellow, A.bright);
-        A.print("  cache-evals <term>", A.yellow);
-        A.print("  cache-dept-courses <term>", A.yellow);
-        A.print("  print-depts <term>", A.yellow);
+    if (args.includes("--help") || args.includes("-h") || args.length === 0) {
+        printUsage();
         return;
     }
 
@@ -25,7 +28,7 @@ const main = async () => {
         case "cache-evals":
             await cacheEvals(term ? [term] : []);
             break;
-        case "cache-dept-courses":
+        case "cache-courses":
             await cacheCourses(term ? [term] : []);
             break;
         case "print-depts":
