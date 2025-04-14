@@ -96,6 +96,7 @@ export type OitCourseDetails = {
     topic_title: string | null;
     long_title: string | null;
     distribution_area_short: string | null;
+    course_head_name: string | null;
     course_head_netid: string | null;
 
     add_consent: StringBoolean;

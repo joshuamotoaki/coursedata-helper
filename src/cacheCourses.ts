@@ -34,6 +34,7 @@ export const cacheCourses = async (terms: string[] = [], depts: string[] = []) =
     const oit = new OitClient(OIT_API_KEY);
 
     if (terms.length === 0) terms = TERMS; // Use all terms if none are provided
+    depts = depts.map((x) => x.trim().toUpperCase());
 
     for (let i = 0; i < terms.length; i++) {
         const term = terms[i];
