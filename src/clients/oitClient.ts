@@ -45,16 +45,6 @@ export class OitClient {
         return await Promise.race([fetcher(), createTimeoutPromise(this.TIMEOUT)]);
     };
 
-    // Unfortunately, some courses just fail to load for some reason. We have
-    // to handle these edge cases by manually inputting the data :(
-    private handleDetailsEdgeCases = (listingId: string, term: string): OitCourseDetails | null => {
-        if (listingId === "010855" && term === "1244") {
-            // GHP 351, Spring 2024
-            // Epidemiology: Unpacking Health with Classic Tools, Ecology and Evolution
-            return null;
-        } else return null;
-    };
-
     /**
      * Fetch the list of courses with main listing being in a given department
      * @param dept 3-letter department code (e.g. "COS")
@@ -110,9 +100,6 @@ export class OitClient {
         listingId: string,
         term: string
     ): Promise<OitCourseDetails> => {
-        const edgeCase = this.handleDetailsEdgeCases(listingId, term);
-        if (edgeCase !== null) return edgeCase;
-
         try {
             const rawCourseDetails = await this.reqWithTimeout(() =>
                 fetch(
